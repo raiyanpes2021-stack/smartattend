@@ -1,0 +1,131 @@
+{
+  "users": [
+    {
+      "id": "usr-admin-01",
+      "loginId": "ADMIN-001",
+      "email": "admin@smartattend.edu",
+      "fullName": "Dr. Arvind Narayanan",
+      "role": "ADMINISTRATION",
+      "department": null,
+      "passwordHash": "e00c4c0103702128c4960419736a4c6f:6ddba5836199a9972b17a114be3e9c47edb1fb05d52e7b122d7be756d5d18363620744efb1021b5e3875e2b626ce3d4fc87672717df667c3eff1b601a2058994",
+      "active": true,
+      "createdAt": "2026-11-18T17:45:58.442Z",
+      "lastLoginAt": "2026-11-18T20:29:52.348Z"
+    },
+    {
+      "id": "usr-hod-cse",
+      "loginId": "HOD-CSE-01",
+      "email": "hod.cse@smartattend.edu",
+      "fullName": "Prof. Meenakshi Iyer",
+      "role": "HOD",
+      "department": "CSE",
+      "passwordHash": "1af62286b2706147b7276fb06ff11ad0:11cd2a83c5a2e30e6c3156d1e6768075c9f65c47b069723282b48840e4ddd6ce1a0df99a80bdbdabc3563bca161df5fdfe73f4e9b77254d3637e2b03edb0bde1",
+      "active": true,
+      "createdAt": "2026-11-18T17:45:58.442Z",
+      "lastLoginAt": "2026-11-18T20:29:52.416Z"
+    },
+    {
+      "id": "usr-hod-it",
+      "loginId": "HOD-IT-01",
+      "email": "hod.it@smartattend.edu",
+      "fullName": "Prof. Vikramaditya Rao",
+      "role": "HOD",
+      "department": "IT",
+      "passwordHash": "f36d8d9a00940b2f8e71a205a7ae2a0b:d26df073212d520be49a7efab6dc9df2d97b0168ac525c14eb3d36a84be99eb62e003d55d68f79cb08961d5b21b07064c0f0aaacb4ab5702645ad1f1c7a71a8b",
+      "active": true,
+      "createdAt": "2026-11-18T17:45:58.442Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "usr-hod-aiml",
+      "loginId": "HOD-AIML-01",
+      "email": "hod.aiml@smartattend.edu",
+      "fullName": "Dr. Kavitha Subramanian",
+      "role": "HOD",
+      "department": "AIML",
+      "passwordHash": "bb053dc3799a8dc6ab463ba1dc21df56:fc415611967e4114adf0be901c515200c5e328686b580f6469464da9a1fe393c3d63c9b5c9a8f0e706e27afc0cb01906e2cb7746bed689399c68e2b60afc9570",
+      "active": true,
+      "createdAt": "2026-11-18T17:45:58.442Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "usr-hod-aids",
+      "loginId": "HOD-AIDS-01",
+      "email": "hod.aids@smartattend.edu",
+      "fullName": "Prof. Siddharth Kulkarni",
+      "role": "HOD",
+      "department": "AIDS",
+      "passwordHash": "17ec3bf9f1e3aff892951700f5d6f3cd:5bfa3beeb5c162eceec6661755c5754c2b6dd1ea4d27122e171542abf684b8e1e03691b82afd3b915a4979a7c51dc58acc9afd982e87c9fa44e4f793ce683714",
+      "active": true,
+      "createdAt": "2026-11-18T17:45:58.442Z",
+      "lastLoginAt": null
+    }
+  ],
+  "classrooms": [
+    {
+      "roomCode": "CSE-204",
+      "roomName": "Room 204 · Smart Computing Lab",
+      "department": "CSE",
+      "yearLevel": "2nd Year",
+      "capacity": 64,
+      "cameraStatus": "Awaiting Hardware Binding"
+    },
+    {
+      "roomCode": "CSE-301",
+      "roomName": "Room 301 · Systems Lecture Hall",
+      "department": "CSE",
+      "yearLevel": "3rd Year",
+      "capacity": 72,
+      "cameraStatus": "Calibration Required"
+    },
+    {
+      "roomCode": "IT-108",
+      "roomName": "Room 108 · Network Architecture Studio",
+      "department": "IT",
+      "yearLevel": "1st Year",
+      "capacity": 60,
+      "cameraStatus": "Awaiting Hardware Binding"
+    },
+    {
+      "roomCode": "IT-402",
+      "roomName": "Room 402 · Enterprise Systems Seminar",
+      "department": "IT",
+      "yearLevel": "4th Year",
+      "capacity": 56,
+      "cameraStatus": "Awaiting Hardware Binding"
+    },
+    {
+      "roomCode": "AIML-202",
+      "roomName": "Room 202 · Neural Vision Studio",
+      "department": "AIML",
+      "yearLevel": "2nd Year",
+      "capacity": 60,
+      "cameraStatus": "Calibration Required"
+    },
+    {
+      "roomCode": "AIML-305",
+      "roomName": "Room 305 · Machine Intelligence Hall",
+      "department": "AIML",
+      "yearLevel": "3rd Year",
+      "capacity": 68,
+      "cameraStatus": "Awaiting Hardware Binding"
+    },
+    {
+      "roomCode": "AIDS-104",
+      "roomName": "Room 104 · Statistical Modeling Hall",
+      "department": "AIDS",
+      "yearLevel": "1st Year",
+      "capacity": 64,
+      "cameraStatus": "Awaiting Hardware Binding"
+    },
+    {
+      "roomCode": "AIDS-401",
+      "roomName": "Room 401 · Data Engineering Capstone",
+      "department": "AIDS",
+      "yearLevel": "4th Year",
+      "capacity": 58,
+      "cameraStatus": "Calibration Required"
+    }
+  ],
+  "sessionSecret": "6bef3a90e83fdb857b1922e7727cbfc09d488185c9c72726cc32f60a6be4b632"
+}

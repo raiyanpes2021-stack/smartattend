@@ -1,0 +1,6 @@
+{
+  "name": "SMARTATTEND",
+  "description": "AI-Powered Multi-Institution Smart Attendance System for Schools and Colleges. Smart Attendance. Zero Smartphones.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

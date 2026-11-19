@@ -1,0 +1,452 @@
+{
+  "entities": {
+    "Institution": {
+      "title": "Institution",
+      "description": "Institution-wide SMARTATTEND configuration, thresholds, and biometric retention settings.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "code": { "type": "string", "minLength": 2, "maxLength": 32, "pattern": "^[A-Z0-9_-]+$" },
+        "lowAttendanceThreshold": { "type": "number" },
+        "highConfidenceThreshold": { "type": "number" },
+        "pendingConfidenceThreshold": { "type": "number" },
+        "biometricRetentionDays": { "type": "integer" },
+        "biometricPolicyVersion": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "allowManualFallback": { "type": "boolean" },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "code",
+        "lowAttendanceThreshold",
+        "highConfidenceThreshold",
+        "pendingConfidenceThreshold",
+        "biometricRetentionDays",
+        "biometricPolicyVersion",
+        "allowManualFallback",
+        "ownerUid",
+        "updatedAt"
+      ]
+    },
+    "AdminMember": {
+      "title": "AdminMember",
+      "description": "Authorized Firebase administrator account entry for RBAC rule verification.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "loginId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "loginId", "fullName", "createdAt"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Academic department record (CSE, IT, AIML, AIDS, or custom department).",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "hodId": { "type": "string", "maxLength": 64 },
+        "hodName": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 400 },
+        "active": { "type": "boolean" },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "name", "active", "ownerUid", "createdAt", "updatedAt"]
+    },
+    "HodAccount": {
+      "title": "HodAccount",
+      "description": "Head of Department profile bound strictly to a single department.",
+      "type": "object",
+      "properties": {
+        "loginId": { "type": "string", "minLength": 3, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["loginId", "fullName", "email", "departmentCode", "status", "ownerUid", "createdAt", "updatedAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student directory profile with consent state and enrollment metadata.",
+      "type": "object",
+      "properties": {
+        "admissionNo": { "type": "string", "minLength": 2, "maxLength": 40, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "registerNo": { "type": "string", "minLength": 3, "maxLength": 40, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "rollNo": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "enrollmentStatus": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "GRADUATED"] },
+        "biometricConsentGranted": { "type": "boolean" },
+        "faceEnrollmentStatus": { "type": "string", "enum": ["NOT_ENROLLED", "ENROLLED", "REVOKED"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registerNo",
+        "rollNo",
+        "fullName",
+        "departmentCode",
+        "academicYear",
+        "section",
+        "email",
+        "enrollmentStatus",
+        "biometricConsentGranted",
+        "faceEnrollmentStatus",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FaceEnrollment": {
+      "title": "FaceEnrollment",
+      "description": "Explicitly consented biometric face descriptor reference tied to a student.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "consentGranted": { "type": "boolean" },
+        "policyVersion": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "descriptor": { "type": "array" },
+        "status": { "type": "string", "enum": ["ACTIVE", "REVOKED"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "studentId",
+        "departmentCode",
+        "consentGranted",
+        "policyVersion",
+        "descriptor",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "Physical college classroom mapped to department, year, section, and camera.",
+      "type": "object",
+      "properties": {
+        "roomCode": { "type": "string", "minLength": 2, "maxLength": 32, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "roomName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "floor": { "type": "string", "maxLength": 32 },
+        "building": { "type": "string", "maxLength": 80 },
+        "capacity": { "type": "integer" },
+        "assignedCameraId": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ACTIVE", "MAINTENANCE", "INACTIVE"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "roomCode",
+        "roomName",
+        "departmentCode",
+        "academicYear",
+        "section",
+        "capacity",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Camera": {
+      "title": "Camera",
+      "description": "Classroom camera registration (Browser webcam, uploaded demo video, or RTSP gateway bridge).",
+      "type": "object",
+      "properties": {
+        "cameraCode": { "type": "string", "minLength": 2, "maxLength": 40, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "cameraNumber": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "classroomId": { "type": "string", "maxLength": 128 },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year", "COMMON"] },
+        "section": { "type": "string", "enum": ["A", "B", "C", "COMMON"] },
+        "isSharedLab": { "type": "boolean" },
+        "authorizedDepartments": { "type": "array" },
+        "sourceType": { "type": "string", "enum": ["WEBCAM", "DEMO_VIDEO", "RTSP_GATEWAY"] },
+        "connectionLabel": { "type": "string", "maxLength": 240 },
+        "online": { "type": "boolean" },
+        "monitoringActive": { "type": "boolean" },
+        "lastError": { "type": "string", "maxLength": 240 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "cameraCode",
+        "name",
+        "departmentCode",
+        "sourceType",
+        "online",
+        "monitoringActive",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Academic subject assigned to a department and academic year.",
+      "type": "object",
+      "properties": {
+        "subjectCode": { "type": "string", "minLength": 2, "maxLength": 24, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "subjectName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "facultyName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "subjectCode",
+        "subjectName",
+        "departmentCode",
+        "academicYear",
+        "facultyName",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TimetableEntry": {
+      "title": "TimetableEntry",
+      "description": "Department timetable period definition synchronized for dynamic camera/subject mapping.",
+      "type": "object",
+      "properties": {
+        "entryKind": { "type": "string", "enum": ["PERIOD", "HOLIDAY", "OVERRIDE"] },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "dayOfWeek": { "type": "string", "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] },
+        "periodNumber": { "type": "integer" },
+        "periodLabel": { "type": "string", "minLength": 1, "maxLength": 48 },
+        "startTime": { "type": "string", "maxLength": 16 },
+        "endTime": { "type": "string", "maxLength": 16 },
+        "subjectName": { "type": "string", "maxLength": 120 },
+        "facultyName": { "type": "string", "maxLength": 120 },
+        "isBreak": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["ACTIVE", "CANCELLED"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "entryKind",
+        "departmentCode",
+        "academicYear",
+        "section",
+        "dayOfWeek",
+        "periodNumber",
+        "periodLabel",
+        "startTime",
+        "endTime",
+        "isBreak",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClassSession": {
+      "title": "ClassSession",
+      "description": "Scheduled or live classroom attendance session.",
+      "type": "object",
+      "properties": {
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "classroomId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "cameraId": { "type": "string", "maxLength": 128 },
+        "subjectId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "subjectName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "sessionDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "startTime": { "type": "string", "maxLength": 16 },
+        "endTime": { "type": "string", "maxLength": 16 },
+        "status": { "type": "string", "enum": ["SCHEDULED", "LIVE", "FINALIZED"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "departmentCode",
+        "academicYear",
+        "section",
+        "classroomId",
+        "subjectId",
+        "subjectName",
+        "sessionDate",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Session-linked attendance record (at most one per student per session).",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "academicYear": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "sessionDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "status": { "type": "string", "enum": ["PRESENT", "ABSENT", "LATE", "PENDING_VERIFICATION", "EXCUSED"] },
+        "verificationSource": { "type": "string", "enum": ["AI_VISION", "MANUAL", "HOD_CORRECTION"] },
+        "confidence": { "type": "number" },
+        "correctionReason": { "type": "string", "maxLength": 300 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "markedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "sessionId",
+        "studentId",
+        "departmentCode",
+        "academicYear",
+        "section",
+        "sessionDate",
+        "status",
+        "verificationSource",
+        "ownerUid",
+        "markedAt",
+        "updatedAt"
+      ]
+    },
+    "RecognitionEvent": {
+      "title": "RecognitionEvent",
+      "description": "Browser CV recognition event logged against an active session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "cameraId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "departmentCode": { "type": "string", "minLength": 2, "maxLength": 16, "pattern": "^[A-Z0-9_-]+$" },
+        "matchedStudentId": { "type": "string", "maxLength": 128 },
+        "confidence": { "type": "number" },
+        "livenessStatus": { "type": "string", "enum": ["VERIFIED", "STATIC_WARNING", "UNCHECKED"] },
+        "outcome": { "type": "string", "enum": ["MATCHED_PRESENT", "PENDING_VERIFICATION", "UNKNOWN", "LIVENESS_WARNING"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "sessionId",
+        "cameraId",
+        "departmentCode",
+        "confidence",
+        "livenessStatus",
+        "outcome",
+        "ownerUid",
+        "capturedAt"
+      ]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable institutional audit trail for attendance edits, biometric revocation, and HOD provisioning.",
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorRole": { "type": "string", "enum": ["ADMINISTRATION", "HOD"] },
+        "departmentCode": { "type": "string", "maxLength": 16 },
+        "action": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "targetType": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "targetId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "details": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "actorId",
+        "actorRole",
+        "action",
+        "targetType",
+        "targetId",
+        "details",
+        "ownerUid",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminMember" },
+      "description": "Trusted administrator lookup documents."
+    },
+    "/institutions/{institutionId}": {
+      "schema": { "$ref": "#/entities/Institution" },
+      "description": "Institutional settings and biometric retention policies."
+    },
+    "/departments/{departmentId}": {
+      "schema": { "$ref": "#/entities/Department" },
+      "description": "Academic departments (CSE, IT, AIML, AIDS, custom)."
+    },
+    "/hods/{hodId}": {
+      "schema": { "$ref": "#/entities/HodAccount" },
+      "description": "Head of Department accounts scoped by departmentCode."
+    },
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Centralized student directory records scoped by departmentCode."
+    },
+    "/faceEnrollments/{enrollmentId}": {
+      "schema": { "$ref": "#/entities/FaceEnrollment" },
+      "description": "Consented student biometric descriptor references."
+    },
+    "/classrooms/{classroomId}": {
+      "schema": { "$ref": "#/entities/Classroom" },
+      "description": "College classroom configurations mapped to departments."
+    },
+    "/cameras/{cameraId}": {
+      "schema": { "$ref": "#/entities/Camera" },
+      "description": "Registered classroom cameras and gateway configurations."
+    },
+    "/subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/Subject" },
+      "description": "Academic subjects per department and year."
+    },
+    "/timetables/{entryId}": {
+      "schema": { "$ref": "#/entities/TimetableEntry" },
+      "description": "Weekly timetable period definitions scoped by department."
+    },
+    "/classSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/ClassSession" },
+      "description": "Classroom attendance sessions."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Session-linked attendance entries (unique per session+student)."
+    },
+    "/recognitionEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/RecognitionEvent" },
+      "description": "Live AI face recognition events recorded during sessions."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable institutional audit log entries."
+    }
+  }
+}

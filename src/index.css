@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-deep-forest: #172B2A;
+  --color-deep-forest-dark: #10201F;
+  --color-emerald-accent: #10B981;
+  --color-emerald-strong: #059669;
+  --color-mint-canvas: #F0FDF4;
+  --color-mint-border: #D1E7DC;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    background-color: #F0FDF4;
+    color: #0F1F1E;
+    font-family: var(--font-sans);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.teaching-board-surface {
+  background-color: #172B2A;
+  background-image:
+    radial-gradient(ellipse at 50% 35%, rgba(16, 185, 129, 0.08) 0%, transparent 62%),
+    radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(240, 253, 244, 0.012) 0px,
+      rgba(240, 253, 244, 0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+}

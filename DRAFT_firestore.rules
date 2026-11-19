@@ -1,0 +1,538 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Reusable Helpers
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function isValidDeptCode(code) {
+      return code is string && code.size() >= 2 && code.size() <= 16 && code.matches('^[A-Z0-9_-]+$');
+    }
+
+    function isValidDateStr(d) {
+      return d is string && d.size() == 10 && d.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidYear(y) {
+      return y in ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    }
+
+    function isValidSection(s) {
+      return s in ['A', 'B', 'C'];
+    }
+
+    function isBootstrapAdmin() {
+      return isVerified() && request.auth.token.email == 'raiyanpes2021@gmail.com';
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        isBootstrapAdmin() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function hasHodRecord() {
+      return isVerified() && exists(/databases/$(database)/documents/hods/$(request.auth.uid));
+    }
+
+    function hodDoc() {
+      return get(/databases/$(database)/documents/hods/$(request.auth.uid)).data;
+    }
+
+    function isActiveHodForDept(deptCode) {
+      return hasHodRecord()
+        && hodDoc().status == 'ACTIVE'
+        && hodDoc().departmentCode == deptCode;
+    }
+
+    // Entity Validation Blueprints (Anti-Update-Gap & Strict Keys)
+    function isValidAdminMember(data) {
+      return data.keys().hasAll(['email', 'loginId', 'fullName', 'createdAt'])
+        && data.keys().hasOnly(['email', 'loginId', 'fullName', 'createdAt'])
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 160
+        && isValidId(data.loginId) && data.loginId.size() <= 64
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120
+        && data.createdAt is timestamp;
+    }
+
+    function isValidInstitution(data) {
+      return data.keys().hasAll([
+          'name', 'code', 'lowAttendanceThreshold', 'highConfidenceThreshold',
+          'pendingConfidenceThreshold', 'biometricRetentionDays', 'biometricPolicyVersion',
+          'allowManualFallback', 'ownerUid', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'code', 'lowAttendanceThreshold', 'highConfidenceThreshold',
+          'pendingConfidenceThreshold', 'biometricRetentionDays', 'biometricPolicyVersion',
+          'allowManualFallback', 'ownerUid', 'updatedAt'
+        ])
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 140
+        && isValidDeptCode(data.code)
+        && data.lowAttendanceThreshold is number && data.lowAttendanceThreshold >= 10 && data.lowAttendanceThreshold <= 99
+        && data.highConfidenceThreshold is number && data.highConfidenceThreshold >= 0.4 && data.highConfidenceThreshold <= 0.99
+        && data.pendingConfidenceThreshold is number && data.pendingConfidenceThreshold >= 0.2 && data.pendingConfidenceThreshold <= data.highConfidenceThreshold
+        && data.biometricRetentionDays is int && data.biometricRetentionDays >= 1 && data.biometricRetentionDays <= 3650
+        && data.biometricPolicyVersion is string && data.biometricPolicyVersion.size() >= 1 && data.biometricPolicyVersion.size() <= 24
+        && data.allowManualFallback is bool
+        && data.ownerUid == request.auth.uid
+        && data.updatedAt == request.time;
+    }
+
+    function isValidDepartment(data) {
+      return data.keys().hasAll(['code', 'name', 'active', 'ownerUid', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['code', 'name', 'hodId', 'hodName', 'description', 'active', 'ownerUid', 'createdAt', 'updatedAt'])
+        && isValidDeptCode(data.code)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && (!('hodId' in data) || (data.hodId is string && data.hodId.size() <= 64))
+        && (!('hodName' in data) || (data.hodName is string && data.hodName.size() <= 120))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 400))
+        && data.active is bool
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidHodAccount(data) {
+      return data.keys().hasAll(['loginId', 'fullName', 'email', 'departmentCode', 'status', 'ownerUid', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['loginId', 'fullName', 'email', 'phone', 'departmentCode', 'firebaseUid', 'status', 'ownerUid', 'createdAt', 'updatedAt'])
+        && isValidId(data.loginId) && data.loginId.size() >= 3 && data.loginId.size() <= 64
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 160
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 32))
+        && isValidDeptCode(data.departmentCode)
+        && (!('firebaseUid' in data) || (data.firebaseUid is string && data.firebaseUid.size() <= 128))
+        && data.status in ['ACTIVE', 'INACTIVE']
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll([
+          'registerNo', 'rollNo', 'fullName', 'departmentCode', 'academicYear',
+          'section', 'email', 'enrollmentStatus', 'biometricConsentGranted',
+          'faceEnrollmentStatus', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'registerNo', 'rollNo', 'fullName', 'departmentCode', 'academicYear',
+          'section', 'email', 'phone', 'enrollmentStatus', 'biometricConsentGranted',
+          'faceEnrollmentStatus', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.registerNo) && data.registerNo.size() >= 3 && data.registerNo.size() <= 40
+        && data.rollNo is string && data.rollNo.size() >= 1 && data.rollNo.size() <= 32
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120
+        && isValidDeptCode(data.departmentCode)
+        && isValidYear(data.academicYear)
+        && isValidSection(data.section)
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 160
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 32))
+        && data.enrollmentStatus in ['ACTIVE', 'INACTIVE', 'GRADUATED']
+        && data.biometricConsentGranted is bool
+        && data.faceEnrollmentStatus in ['NOT_ENROLLED', 'ENROLLED', 'REVOKED']
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidFaceEnrollment(data) {
+      return data.keys().hasAll([
+          'studentId', 'departmentCode', 'consentGranted', 'policyVersion',
+          'descriptor', 'status', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'studentId', 'departmentCode', 'consentGranted', 'policyVersion',
+          'descriptor', 'status', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.studentId)
+        && isValidDeptCode(data.departmentCode)
+        && data.consentGranted is bool
+        && data.policyVersion is string && data.policyVersion.size() >= 1 && data.policyVersion.size() <= 24
+        && data.descriptor is list && data.descriptor.size() <= 128
+        && (data.descriptor.size() == 0 || data.descriptor[0] is number)
+        && data.status in ['ACTIVE', 'REVOKED']
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidClassroom(data) {
+      return data.keys().hasAll([
+          'roomCode', 'roomName', 'departmentCode', 'academicYear',
+          'section', 'capacity', 'status', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'roomCode', 'roomName', 'departmentCode', 'academicYear', 'section',
+          'floor', 'building', 'capacity', 'assignedCameraId', 'status',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.roomCode) && data.roomCode.size() >= 2 && data.roomCode.size() <= 32
+        && data.roomName is string && data.roomName.size() >= 2 && data.roomName.size() <= 120
+        && isValidDeptCode(data.departmentCode)
+        && isValidYear(data.academicYear)
+        && isValidSection(data.section)
+        && (!('floor' in data) || (data.floor is string && data.floor.size() <= 32))
+        && (!('building' in data) || (data.building is string && data.building.size() <= 80))
+        && data.capacity is int && data.capacity >= 1 && data.capacity <= 500
+        && (!('assignedCameraId' in data) || (data.assignedCameraId is string && data.assignedCameraId.size() <= 128))
+        && data.status in ['ACTIVE', 'MAINTENANCE', 'INACTIVE']
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidCamera(data) {
+      return data.keys().hasAll([
+          'cameraCode', 'name', 'departmentCode', 'sourceType',
+          'online', 'monitoringActive', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'cameraCode', 'name', 'classroomId', 'departmentCode', 'sourceType',
+          'connectionLabel', 'online', 'monitoringActive', 'lastError',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.cameraCode) && data.cameraCode.size() >= 2 && data.cameraCode.size() <= 40
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && (!('classroomId' in data) || (data.classroomId is string && data.classroomId.size() <= 128))
+        && isValidDeptCode(data.departmentCode)
+        && data.sourceType in ['WEBCAM', 'DEMO_VIDEO', 'RTSP_GATEWAY']
+        && (!('connectionLabel' in data) || (data.connectionLabel is string && data.connectionLabel.size() <= 240))
+        && data.online is bool
+        && data.monitoringActive is bool
+        && (!('lastError' in data) || (data.lastError is string && data.lastError.size() <= 240))
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidSubject(data) {
+      return data.keys().hasAll([
+          'subjectCode', 'subjectName', 'departmentCode', 'academicYear',
+          'facultyName', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'subjectCode', 'subjectName', 'departmentCode', 'academicYear',
+          'facultyName', 'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.subjectCode) && data.subjectCode.size() >= 2 && data.subjectCode.size() <= 24
+        && data.subjectName is string && data.subjectName.size() >= 2 && data.subjectName.size() <= 120
+        && isValidDeptCode(data.departmentCode)
+        && isValidYear(data.academicYear)
+        && data.facultyName is string && data.facultyName.size() >= 2 && data.facultyName.size() <= 120
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidClassSession(data) {
+      return data.keys().hasAll([
+          'departmentCode', 'academicYear', 'section', 'classroomId',
+          'subjectId', 'subjectName', 'sessionDate', 'status',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'departmentCode', 'academicYear', 'section', 'classroomId', 'cameraId',
+          'subjectId', 'subjectName', 'sessionDate', 'startTime', 'endTime', 'status',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidDeptCode(data.departmentCode)
+        && isValidYear(data.academicYear)
+        && isValidSection(data.section)
+        && isValidId(data.classroomId)
+        && (!('cameraId' in data) || (data.cameraId is string && data.cameraId.size() <= 128))
+        && isValidId(data.subjectId)
+        && data.subjectName is string && data.subjectName.size() >= 2 && data.subjectName.size() <= 120
+        && isValidDateStr(data.sessionDate)
+        && (!('startTime' in data) || (data.startTime is string && data.startTime.size() <= 16))
+        && (!('endTime' in data) || (data.endTime is string && data.endTime.size() <= 16))
+        && data.status in ['SCHEDULED', 'LIVE', 'FINALIZED']
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.keys().hasAll([
+          'sessionId', 'studentId', 'departmentCode', 'academicYear', 'section',
+          'sessionDate', 'status', 'verificationSource', 'ownerUid', 'markedAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'sessionId', 'studentId', 'departmentCode', 'academicYear', 'section',
+          'sessionDate', 'status', 'verificationSource', 'confidence', 'correctionReason',
+          'ownerUid', 'markedAt', 'updatedAt'
+        ])
+        && isValidId(data.sessionId)
+        && isValidId(data.studentId)
+        && isValidDeptCode(data.departmentCode)
+        && isValidYear(data.academicYear)
+        && isValidSection(data.section)
+        && isValidDateStr(data.sessionDate)
+        && data.status in ['PRESENT', 'ABSENT', 'LATE', 'PENDING_VERIFICATION', 'EXCUSED']
+        && data.verificationSource in ['AI_VISION', 'MANUAL', 'HOD_CORRECTION']
+        && (!('confidence' in data) || (data.confidence is number && data.confidence >= 0 && data.confidence <= 1))
+        && (!('correctionReason' in data) || (data.correctionReason is string && data.correctionReason.size() <= 300))
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && data.markedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidRecognitionEvent(data) {
+      return data.keys().hasAll([
+          'sessionId', 'cameraId', 'departmentCode', 'confidence',
+          'livenessStatus', 'outcome', 'ownerUid', 'capturedAt'
+        ])
+        && data.keys().hasOnly([
+          'sessionId', 'cameraId', 'departmentCode', 'matchedStudentId',
+          'confidence', 'livenessStatus', 'outcome', 'ownerUid', 'capturedAt'
+        ])
+        && isValidId(data.sessionId)
+        && isValidId(data.cameraId)
+        && isValidDeptCode(data.departmentCode)
+        && (!('matchedStudentId' in data) || (data.matchedStudentId is string && data.matchedStudentId.size() <= 128))
+        && data.confidence is number && data.confidence >= 0 && data.confidence <= 1
+        && data.livenessStatus in ['VERIFIED', 'STATIC_WARNING', 'UNCHECKED']
+        && data.outcome in ['MATCHED_PRESENT', 'PENDING_VERIFICATION', 'UNKNOWN', 'LIVENESS_WARNING']
+        && data.ownerUid == request.auth.uid
+        && data.capturedAt == request.time;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll([
+          'actorId', 'actorRole', 'action', 'targetType', 'targetId',
+          'details', 'ownerUid', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'actorId', 'actorRole', 'departmentCode', 'action', 'targetType',
+          'targetId', 'details', 'ownerUid', 'createdAt'
+        ])
+        && data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128
+        && data.actorRole in ['ADMINISTRATION', 'HOD']
+        && (!('departmentCode' in data) || isValidDeptCode(data.departmentCode))
+        && data.action is string && data.action.size() >= 2 && data.action.size() <= 80
+        && data.targetType is string && data.targetType.size() >= 2 && data.targetType.size() <= 64
+        && data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128
+        && data.details is string && data.details.size() >= 1 && data.details.size() <= 400
+        && data.ownerUid == request.auth.uid
+        && data.createdAt == request.time;
+    }
+
+    // Collection Match Blocks
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && (isBootstrapAdmin() || (isVerified() && request.auth.uid == adminUid));
+      allow list: if isBootstrapAdmin();
+      allow create: if isValidId(adminUid) && isBootstrapAdmin() && isValidAdminMember(incoming()) && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(adminUid) && isBootstrapAdmin();
+    }
+
+    match /institutions/{institutionId} {
+      allow get: if isValidId(institutionId) && (isAdmin() || hasHodRecord());
+      allow list: if isAdmin();
+      allow create, update: if isValidId(institutionId) && isAdmin() && isValidInstitution(incoming());
+      allow delete: if false;
+    }
+
+    match /departments/{departmentId} {
+      allow get: if isValidId(departmentId) && (isAdmin() || isActiveHodForDept(existing().code));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.code == hodDoc().departmentCode);
+      allow create: if isValidId(departmentId) && isAdmin() && isValidDepartment(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isValidId(departmentId) && isAdmin() && isValidDepartment(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().ownerUid == existing().ownerUid;
+      allow delete: if isValidId(departmentId) && isAdmin();
+    }
+
+    match /hods/{hodId} {
+      allow get: if isValidId(hodId) && (isAdmin() || (isVerified() && request.auth.uid == hodId));
+      allow list: if isAdmin() || (isVerified() && resource.data.firebaseUid == request.auth.uid);
+      allow create: if isValidId(hodId) && isAdmin() && isValidHodAccount(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isValidId(hodId) && isAdmin() && isValidHodAccount(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().ownerUid == existing().ownerUid;
+      allow delete: if isValidId(hodId) && isAdmin();
+    }
+
+    match /students/{studentId} {
+      allow get: if isValidId(studentId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(studentId) && isValidStudent(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update: if isValidId(studentId) && isValidStudent(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().ownerUid == existing().ownerUid
+        && (
+          isAdmin() ||
+          (
+            isActiveHodForDept(existing().departmentCode)
+            && incoming().departmentCode == existing().departmentCode
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'fullName', 'rollNo', 'academicYear', 'section', 'email', 'phone',
+              'enrollmentStatus', 'biometricConsentGranted', 'faceEnrollmentStatus', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(studentId) && isAdmin();
+    }
+
+    match /faceEnrollments/{enrollmentId} {
+      allow get: if isValidId(enrollmentId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(enrollmentId) && isValidFaceEnrollment(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time
+        && incoming().consentGranted == true
+        && exists(/databases/$(database)/documents/students/$(incoming().studentId))
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update: if isValidId(enrollmentId) && isValidFaceEnrollment(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().studentId == existing().studentId
+        && incoming().departmentCode == existing().departmentCode
+        && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow delete: if isValidId(enrollmentId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+    }
+
+    match /classrooms/{classroomId} {
+      allow get: if isValidId(classroomId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(classroomId) && isAdmin() && isValidClassroom(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isValidId(classroomId) && isValidClassroom(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().ownerUid == existing().ownerUid
+        && (
+          isAdmin() ||
+          (
+            isActiveHodForDept(existing().departmentCode)
+            && incoming().departmentCode == existing().departmentCode
+            && incoming().diff(existing()).affectedKeys().hasOnly(['assignedCameraId', 'status', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(classroomId) && isAdmin();
+    }
+
+    match /cameras/{cameraId} {
+      allow get: if isValidId(cameraId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(cameraId) && isAdmin() && isValidCamera(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isValidId(cameraId) && isValidCamera(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().ownerUid == existing().ownerUid
+        && (
+          isAdmin() ||
+          (
+            isActiveHodForDept(existing().departmentCode)
+            && incoming().departmentCode == existing().departmentCode
+            && incoming().diff(existing()).affectedKeys().hasOnly(['online', 'monitoringActive', 'lastError', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(cameraId) && isAdmin();
+    }
+
+    match /subjects/{subjectId} {
+      allow get: if isValidId(subjectId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(subjectId) && isValidSubject(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update: if isValidId(subjectId) && isValidSubject(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().ownerUid == existing().ownerUid
+        && (isAdmin() || (isActiveHodForDept(existing().departmentCode) && incoming().departmentCode == existing().departmentCode));
+      allow delete: if isValidId(subjectId) && isAdmin();
+    }
+
+    match /classSessions/{sessionId} {
+      allow get: if isValidId(sessionId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(sessionId) && isValidClassSession(incoming())
+        && incoming().ownerUid == request.auth.uid && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/classrooms/$(incoming().classroomId))
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update: if isValidId(sessionId) && isValidClassSession(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().ownerUid == existing().ownerUid
+        && (
+          isAdmin() ||
+          (
+            isActiveHodForDept(existing().departmentCode)
+            && existing().status != 'FINALIZED'
+            && incoming().departmentCode == existing().departmentCode
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'endTime', 'cameraId', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(sessionId) && isAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      allow get: if isValidId(attendanceId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(attendanceId) && isValidAttendanceRecord(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().markedAt == request.time
+        && exists(/databases/$(database)/documents/classSessions/$(incoming().sessionId))
+        && exists(/databases/$(database)/documents/students/$(incoming().studentId))
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update: if isValidId(attendanceId) && isValidAttendanceRecord(incoming())
+        && incoming().markedAt == existing().markedAt
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().sessionId == existing().sessionId
+        && incoming().studentId == existing().studentId
+        && incoming().departmentCode == existing().departmentCode
+        && (
+          isAdmin() ||
+          (
+            isActiveHodForDept(existing().departmentCode)
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'verificationSource', 'confidence', 'correctionReason', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(attendanceId) && isAdmin();
+    }
+
+    match /recognitionEvents/{eventId} {
+      allow get: if isValidId(eventId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(eventId) && isValidRecognitionEvent(incoming())
+        && exists(/databases/$(database)/documents/classSessions/$(incoming().sessionId))
+        && (isAdmin() || isActiveHodForDept(incoming().departmentCode));
+      allow update, delete: if false;
+    }
+
+    match /auditLogs/{logId} {
+      allow get: if isValidId(logId) && (isAdmin() || isActiveHodForDept(existing().departmentCode));
+      allow list: if isAdmin() || (hasHodRecord() && resource.data.departmentCode == hodDoc().departmentCode);
+      allow create: if isValidId(logId) && isValidAuditLog(incoming())
+        && (
+          isAdmin() ||
+          (
+            incoming().actorRole == 'HOD'
+            && ('departmentCode' in incoming())
+            && isActiveHodForDept(incoming().departmentCode)
+          )
+        );
+      allow update, delete: if false;
+    }
+  }
+}
